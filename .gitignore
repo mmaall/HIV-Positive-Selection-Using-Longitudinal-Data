@@ -103,6 +103,11 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+#sublime text files
+*.sublime-project
+*.sublime-workspace
+
+
 # zip files
 *.zip
 
