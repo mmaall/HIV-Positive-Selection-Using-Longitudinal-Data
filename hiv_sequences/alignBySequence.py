@@ -5,7 +5,7 @@ import sys
 import argparse
 import getopt
 import os
-import Bio
+from Bio import AlignIO
 
 #Used to align fasta files
 #Uses global allignment file provided to re allign all the patient
@@ -130,6 +130,9 @@ def alignFiles(alignment,fastaDir):
         newAlignment.close()
         oldAlignment.close()
 
+
+        #align =AlignIO.read(open(alignDir+file, "r"), "fasta")
+        #print (align)
 
 
 
