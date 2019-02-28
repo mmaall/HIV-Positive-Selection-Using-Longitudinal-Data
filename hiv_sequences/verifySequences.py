@@ -10,10 +10,15 @@ import os
 #b: sequence header
 #c: sequence
 
+verbose=False
 
 def fastaToSequenceList(fileName):
 
-    file=open(fileName, "r")
+    file=None
+    try:
+    	file=open(fileName, "r")
+    except Exception: 
+    	raise Exception("Open: "+fileName+": Unable to open")  
 
     fileSequenceList= []
 
@@ -63,46 +68,72 @@ def fastaToSequenceList(fileName):
     file.close()
     return fileSequenceList
 
+
+#Verifies whether the patient files provided are aligned with the
+#global alignment file
+#
+#Args
+#globalAlignmentFile: file with globaly aligned sequences
+#fastaDir: Directory holding all patients fasta files
+#			Must be in ./<path>/ notation. Must end in /
 def verifyAligned(globalAlignmentFile, fastaDir):
 
     fastaTail= ".fasta_linsi.fasta"
-    globalSequences = fastaToSequenceList(globalAlignmentFile)
+    globalSequences= None
+    try:
+    	globalSequences = fastaToSequenceList(globalAlignmentFile)
+    except Exception:
+    	raise Exception("verifyAligned: "+globalAlignmentFile+": Unable to open")
 
+    fileNotFoundCount= 0
     failureCount=0 
     for globalID, globalHeader, globalSeq in globalSequences:
-        localSequences= fastaToSequenceList(fastaDir+globalID+fastaTail)
-        #print("Testing "+globalID)
+
+        localPath= fastaDir+globalID+fastaTail
+        localSequences=None
+        try:
+        	localSequences= fastaToSequenceList(localPath)
+        except Exception:
+        	print("File: "+localPath+": File Not Found")
+        	print("Unable to analyze "+globalID)
+        	fileNotFoundCount+=1
+
+
         for localID, localHeader, localSeq in localSequences:
-            #print (globalHeader)
-            #print (localHeader)
             if globalHeader == localHeader:
                 if globalSeq == localSeq:
-                    print("Sequence " + globalID +" matches!")
+                	if verbose:
+                   	    print("Sequence " + globalID +" matches!")
 
                 else:
                     failureCount+=1
                     print("FAILURE: Sequence: " + globalID + " does not match!")
-                    print("Global: "+globalID)
-                    print(globalHeader)
-                    print(globalSeq)
-                    print("Local: "+localID)
-                    print(localHeader)
-                    print(localSeq)
-                    print("\n\n\n\n")
+                    if verbose:
+                        print("Global: "+globalID)
+                        print(globalHeader)
+                        print(globalSeq)
+                        print("Local: "+localID)
+                        print(localHeader)
+                        print(localSeq)
+                        print("\n\n\n\n")
                 break
 
         #print (localSequences)
         #print(localSequences[0])
 
-    
+    print("Number of unmatched sequences: {}".format(failureCount))	
+    print("Number of sequences not evaluated: {}".format(fileNotFoundCount))
 
 
 def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument( '-d', dest='fastaDir', help='Fasta File Directory', required=True)
     p.add_argument('-a', dest='alignmentFile', help='Global alignment file', required=True)
+    p.add_argument('-v', help= 'Verbose printing',action='store_true')
     args = p.parse_args()
 
+    if args.v :
+    	verbose=True
 
     if args.fastaDir is None:
         p.print_help()
