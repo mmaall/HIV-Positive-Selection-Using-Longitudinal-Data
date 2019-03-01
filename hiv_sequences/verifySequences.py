@@ -12,6 +12,14 @@ import os
 
 verbose=False
 
+
+def trimEndOfSequence(sequence, char):
+    for currChar in reversed(sequence):
+        if(currChar== char):
+            sequence=sequence[:-1]
+        else: break
+    return sequence
+
 def fastaToSequenceList(fileName):
 
     file=None
@@ -32,10 +40,7 @@ def fastaToSequenceList(fileName):
                 #We need to add the file name and sequence to the 
                 
                 #must trim  dashs (-) from the end
-                for currChar in reversed(sequence):
-                	if(currChar== '-'):
-                		sequence=sequence[:-1]
-                	else: break
+                sequence= trimEndOfSequence(sequence, '-')
 
 
                 #file sequence list
@@ -129,10 +134,11 @@ def main(argv):
     p = argparse.ArgumentParser()
     p.add_argument( '-d', dest='fastaDir', help='Fasta File Directory', required=True)
     p.add_argument('-a', dest='alignmentFile', help='Global alignment file', required=True)
-    p.add_argument('-v', help= 'Verbose printing',action='store_true')
+    p.add_argument('-v', '--verbose', help= 'Verbose printing',action='store_true')
     args = p.parse_args()
 
-    if args.v :
+    if args.verbose :
+    	global verbose
     	verbose=True
 
     if args.fastaDir is None:
