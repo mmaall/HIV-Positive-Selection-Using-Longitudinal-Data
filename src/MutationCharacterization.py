@@ -115,11 +115,6 @@ class FastAreader :
 
 def main(inCL=None):
 
-    if inCL is None:
-        myCommandLine = CommandLine()
-    else :
-        myCommandLine = CommandLine(inCL)
-
     myReader = FastAreader()
     seqDict = []
 
