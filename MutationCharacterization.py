@@ -2,6 +2,22 @@
 """
 Characterization of mutations between sequences
 """
+
+from enum import Enum
+
+#Creates an enum for mutation types
+#Contains transitions and transversions
+class mutationType:
+    transition= 1
+    transversion= 2
+
+#Creates an enum for types of bases
+#Contains both purines and pyrimidines
+class baseType:
+    pur= 1#
+    pyr= 2
+
+
 class mutCharStorage:
 
     dnaCodonTable = {
