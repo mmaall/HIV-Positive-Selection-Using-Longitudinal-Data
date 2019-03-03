@@ -14,7 +14,7 @@ class mutationType:
 #Creates an enum for types of bases
 #Contains both purines and pyrimidines
 class baseType:
-    pur= 1#
+    pur= 1
     pyr= 2
 
 
