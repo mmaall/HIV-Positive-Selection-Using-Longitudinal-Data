@@ -87,9 +87,9 @@ class mutCharStorage:
                                 break # breaks out of this for loop
                             else:
                                 if self.baseStructure[base] != self.baseStructure[tfcodon[possibleMut]]:
-                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transversion", mutType})
+                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transversion", mutType]})
                                 else:
-                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transition", mutType})
+                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transition", mutType]})
                     # if amibugous code is present in tfcodon
                     elif base in tfcodon:
                         for i in range(len(ambigCodes[base]:
