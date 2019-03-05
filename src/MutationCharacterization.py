@@ -45,6 +45,17 @@ class mutCharStorage:
         }
 
     baseStructure = {'C': 'pyr', 'T': 'pyr', 'G': 'pur', 'A': 'pur'}
+    ambigCodes = {'Y': ['C', 'T'],
+                  'R': ['A', 'G'],
+                  'W': ['A', 'T'],
+                  'S': ['G', 'C'],
+                  'K': ['T', 'G'],
+                  'M': ['C', 'A'],
+                  'D': ['A', 'G', 'T'],
+                  'V': ['A', 'C', 'G'],
+                  'H': ['A', 'C', 'T'], 
+                  'B': ['C', 'G', 'T']
+    }
 
     def __init__(self, t0Seq, tfSeq):
         
@@ -60,6 +71,44 @@ class mutCharStorage:
             t0codon = self.seqt0[pos:pos+3]
             tfcodon = self.seqtf[pos:pos+3]
             if t0codon != tfcodon:
+                # checks if any ambiguous codes are present in either codon
+                for base in ambigCodes.keys():
+                    # if ambiguous code in t0codon
+                    if base in t0codon:
+                        for i in range(len(ambigCodes[base])):
+                            testcodon = t0codon.replace(base, ambigCodes[base][i])
+                            if self.dnaCodonTable[testcodon] != self.dnaCodonTable[tfcodon]:
+                                mutType = "nonsyn"
+                                possibleMutation = pos+testcodon.find(base)+1
+                            else:
+                                syn += 1 # if it is a synonymous mutation, we don't want to count that mutation position.
+                                mutType = "syn"
+                            if syn > 0:
+                                break # breaks out of this for loop
+                            else:
+                                if self.baseStructure[base] != self.baseStructure[tfcodon[possibleMut]]:
+                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transversion", mutType})
+                                else:
+                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transition", mutType})
+                    # if amibugous code is present in tfcodon
+                    elif base in tfcodon:
+                        for i in range(len(ambigCodes[base]:
+                                           testcodon = tfcodon.replace(base, ambigCodes[base][i])
+                            if self.dnaCodonTable[testcodon] != self.dnaCodonTable[t0codon]:
+                                nonsyn += 1
+                                mutType = "nonsyn"
+                                possibleMutation = pos+testcodon.find(base)+1
+                            else:
+                                syn += 1
+                                mutType = "syn"
+                            if syn > 0:
+                                break
+                            else:
+                                if self.baseStructure[base] != self.baseStructure[t0codon[possibleMut]]:
+                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transversion", mutType})
+                                else:
+                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transition", m
+                # assumes there are no ambiguous bases in either codons
                 if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]:
                     mutType = "nonsyn"
                 else:
