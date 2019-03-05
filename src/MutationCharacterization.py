@@ -4,7 +4,7 @@ Characterization of mutations between sequences
 """
 
 from enum import Enum
-from FastaReader import FastaReader
+#from FastaReader import FastaReader
 
 #Creates an enum for mutation types
 #Contains transitions and transversions
@@ -72,11 +72,12 @@ class mutCharStorage:
             tfcodon = self.seqtf[pos:pos+3]
             if t0codon != tfcodon:
                 # checks if any ambiguous codes are present in either codon
-                for base in ambigCodes.keys():
+                for base in self.ambigCodes.keys():
                     # if ambiguous code in t0codon
                     if base in t0codon:
-                        for i in range(len(ambigCodes[base])):
-                            testcodon = t0codon.replace(base, ambigCodes[base][i])
+                        for i in range(len(self.ambigCodes[base])):
+                            testcodon = t0codon.replace(base, self.ambigCodes[base][i])
+                            syn = 0
                             if self.dnaCodonTable[testcodon] != self.dnaCodonTable[tfcodon]:
                                 mutType = "nonsyn"
                                 possibleMutation = pos+testcodon.find(base)+1
@@ -92,8 +93,8 @@ class mutCharStorage:
                                     self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transition", mutType]})
                     # if amibugous code is present in tfcodon
                     elif base in tfcodon:
-                        for i in range(len(ambigCodes[base]:
-                                           testcodon = tfcodon.replace(base, ambigCodes[base][i])
+                        for i in range(len(self.ambigCodes[base])):
+                            testcodon = tfcodon.replace(base, self.ambigCodes[base][i])
                             if self.dnaCodonTable[testcodon] != self.dnaCodonTable[t0codon]:
                                 nonsyn += 1
                                 mutType = "nonsyn"
@@ -105,9 +106,11 @@ class mutCharStorage:
                                 break
                             else:
                                 if self.baseStructure[base] != self.baseStructure[t0codon[possibleMut]]:
-                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transversion", mutType})
+                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transversion", mutType]})
                                 else:
-                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transition", m
+                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transition", mutType]})
+                continue
+
                 # assumes there are no ambiguous bases in either codons
                 if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]:
                     mutType = "nonsyn"
@@ -123,7 +126,7 @@ class mutCharStorage:
 
 
 import sys
-class FastAreader :
+class FastaReader :
     
     def __init__ (self, fname=''):
         '''contructor: saves attribute fname '''
@@ -163,13 +166,13 @@ class FastAreader :
 
 def main(inCL=None):
 
-    myReader = FastAreader()
+    myReader = FastaReader()
     seqDict = []
 
     for header,seq in myReader.readFasta():
         seqDict.append([header, seq])
 
-    myMutChar = mutCharStorage(seqDict[0][1], [1][1])
+    myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
     for key in totalMutations:
         print("key = " +totalMutations[key])
