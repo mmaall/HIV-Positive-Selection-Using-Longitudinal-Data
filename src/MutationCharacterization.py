@@ -89,8 +89,8 @@ class mutCharStorage:
 class PatientProfile :
     def __init__ (self, header, mutDatabase):
         thisHeader = header.split('_')
-        self.drug = thisHeader[6]
-        self.patientID = ''
+        #self.drug = thisHeader[6]
+        self.patientID = thisHeader
         self.mutations = mutDatabase
         self.transverseCount = 0
         self.transitionCount = 0
@@ -142,17 +142,21 @@ class FastaReader :
 
         yield header,sequence
 
-def main(argv):
+def main():
 
 
     myReader = FastaReader()
     seqDict = []
+    for header, sequence in myReader.readFasta():
+        seqDict.append([header, sequence])
 
     myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
     thisPatient = PatientProfile(seqDict[1][1], totalMutations)
+    print("v: "+str(thisPatient.transverseCount))
+    print("t: "+str(thisPatient.transitionCount))
     for key in totalMutations:
         print(str(key)+": "+str(totalMutations[key]))
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
