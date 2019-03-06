@@ -71,58 +71,25 @@ class mutCharStorage:
             t0codon = self.seqt0[pos:pos+3]
             tfcodon = self.seqtf[pos:pos+3]
             if t0codon != tfcodon:
-                # checks if any ambiguous codes are present in either codon
-                for base in self.ambigCodes.keys():
-                    # if ambiguous code in t0codon
-                    if base in t0codon:
-                        for i in range(len(self.ambigCodes[base])):
-                            testcodon = t0codon.replace(base, self.ambigCodes[base][i])
-                            syn = 0
-                            if self.dnaCodonTable[testcodon] != self.dnaCodonTable[tfcodon]:
-                                mutType = "nonsyn"
-                                possibleMutation = pos+testcodon.find(base)+1
-                            else:
-                                syn += 1 # if it is a synonymous mutation, we don't want to count that mutation position.
-                                mutType = "syn"
-                            if syn > 0:
-                                break # breaks out of this for loop
-                            else:
-                                if self.baseStructure[base] != self.baseStructure[tfcodon[possibleMut]]:
-                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transversion", mutType]})
-                                else:
-                                    self.mutCharDict.update({possibleMutation:[base, tfcodon[i], "transition", mutType]})
-                    # if amibugous code is present in tfcodon
-                    elif base in tfcodon:
-                        for i in range(len(self.ambigCodes[base])):
-                            testcodon = tfcodon.replace(base, self.ambigCodes[base][i])
-                            if self.dnaCodonTable[testcodon] != self.dnaCodonTable[t0codon]:
-                                nonsyn += 1
-                                mutType = "nonsyn"
-                                possibleMutation = pos+testcodon.find(base)+1
-                            else:
-                                syn += 1
-                                mutType = "syn"
-                            if syn > 0:
-                                break
-                            else:
-                                if self.baseStructure[base] != self.baseStructure[t0codon[possibleMut]]:
-                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transversion", mutType]})
-                                else:
-                                    self.mutCharDict.update({possibleMutation:[t0codon[i], base, "transition", mutType]})
-                continue
-
-                # assumes there are no ambiguous bases in either codons
-                if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]:
-                    mutType = "nonsyn"
+                if t0codon in self.dnaCodonTable.keys() and tfcodon in self.dnaCodonTable.keys():
+                    if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]:
+                        mutType = "nonsyn"
+                    else:
+                        mutType = "syn"
                 else:
-                    mutType = "syn"
+                    continue
                 for i in range(3):
                     if t0codon[i] != tfcodon[i]:
                         if self.baseStructure[t0codon[i]] != self.baseStructure[tfcodon[i]]:
-                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transversion", mutType]})
+                            self.mutCharDict.update({(pos+i+1):["transversion", mutType]})
                         else:
-                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transition", mutType]})
+                            self.mutCharDict.update({(pos+i+1):["transition", mutType]})
         return self.mutCharDict
+class PatientProfile :
+    def __init__ (self, header, seq):
+        thisHeader = header.split('_')
+        self.drug = thisHeader[6]
+        self.patientID = ''
 
 
 import sys
@@ -175,7 +142,7 @@ def main(inCL=None):
     myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
     for key in totalMutations:
-        print("key = " +totalMutations[key])
+        print(str(key)+": "+str(totalMutations[key]))
 
 if __name__ == '__main__':
     main()
