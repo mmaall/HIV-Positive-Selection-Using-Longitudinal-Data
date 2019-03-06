@@ -131,13 +131,11 @@ class FastaReader :
 
         yield header,sequence
 
-def main(inCL=None):
+def main(argv):
+
 
     myReader = FastaReader()
     seqDict = []
-
-    for header,seq in myReader.readFasta():
-        seqDict.append([header, seq])
 
     myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
@@ -145,4 +143,4 @@ def main(inCL=None):
         print(str(key)+": "+str(totalMutations[key]))
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

@@ -6,13 +6,13 @@ from FastaReader import FastaReader
 
 #Creates an enum for mutation types
 #Contains transitions and transversions
-class transitionTransversion:
+class transTranv(Enum):
     transition= 1
     transversion= 2
 
 #Creates an enum for types of bases
 #Contains both purines and pyrimidines
-class mutationType:
+class mutationType(Enum):
     syn= 1
     nonsyn= 2
 
@@ -68,6 +68,15 @@ def findMutations(seqt0, seqtf):
     for pos in range(0, len(seqt0), 3):
         t0codon = seqt0[pos:pos+3]
         tfcodon = seqtf[pos:pos+3]
+        foundAmbiguousBase= False
+        for pos1, pos2 in zip(t0codon, tfcodon):
+            if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
+                foundAmbiguousBase=True
+                break
+
+        if foundAmbiguousBase:
+            continue
+
         if t0codon != tfcodon:
             if "-" in t0codon or "-" in tfcodon:
                 continue
@@ -81,6 +90,7 @@ def findMutations(seqt0, seqtf):
                         mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transversion", mutType]})
                     else:
                         mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transition", mutType]})
+
     return mutCharDict
 
 #Finds whether there is a mutation or not at a specific base position
@@ -92,35 +102,13 @@ def mutationAtBase(basePosition, codonInit, codonFinal):
     isMuation= False
 
 
-def findMutationsComplex(seqt0, seqtf):
-    mutType = ""
-    # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
-    mutCharDict= {}
-    for pos in range(0, len(seqt0), 3):
-        t0codon = seqt0[pos:pos+3]
-        tfcodon = seqtf[pos:pos+3]
-        if t0codon != tfcodon:
-            if "-" in t0codon or "-" in tfcodon:
-                continue
-            if dnaCodonTable[t0codon] != dnaCodonTable[tfcodon]:
-                mutType = "nonsyn"
-            else:
-                mutType = "syn"
-            for i in range(3):
-                if t0codon[i] != tfcodon[i]:
-                    if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transversion", mutType]})
-                    else:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transition", mutType]})
-    return mutCharDict
-
 
 
 
 
 class Patient :
     
-    def __init__ (self, fname=None,uniqueID= None, seqt0=None , seqtf= None, mutCharDict= None, drugsGiven= None):
+    def __init__ (self, fname=None,uniqueID= None, seqt0=None , seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
         '''contructor: saves attribute fname '''
         if fname == None:
             self.fname= ''
@@ -152,6 +140,12 @@ class Patient :
         else:
             self.drugsGiven= drugsGiven
 
+        if possibleMutations== None:
+            possibleMutations= []
+        else:
+            self.possibleMutations= possibleMutations
+
+
         
     def inputFile(self, fname):
         self.fname=fname
@@ -167,17 +161,17 @@ class Patient :
         self.seqtf= mutationList[-1][1]
         #Shaves '>' 
 
-        self.mutCharDict=findMutations(self.seqt0,self.seqtf)
+        self.mutCharDict= findMutations(self.seqt0,self.seqtf)
         #Parse the header and put in relevant information
         finalHeader= mutationList[-1][0]
-        print(finalHeader)
+        #print(finalHeader)
         readHeader= True
         firstUnderScore= True
         builtStr=''
         readDrugs=False
         for char in header:
-            print("Char:" +char)
-            print("builtStr: "+builtStr)
+            #print("Char:" +char)
+            #print("builtStr: "+builtStr)
             if readHeader:
                 if char=='_':
                     if firstUnderScore:
@@ -215,27 +209,30 @@ class Patient :
         output+=self.fname + "\n"
         output+="Unique ID: "+self.uniqueID
         count= 0
-        MAX_LINE_LENGTH= 50
+        MAX_LINE_LENGTH= 60
         output+="\nInitial Sequence:\n"
         for char in self.seqt0:
-            if count == 50:
+            if count == MAX_LINE_LENGTH:
                 output+="\n"
                 count= 0
             output+=char
+            count+=1
 
         output+="\nFinal Sequence:\n"
+        count= 0
         for char in self.seqtf:
-            if count == 50:
+            if count == MAX_LINE_LENGTH:
                 output+="\n"
                 count= 0
             output+=char  
+            count+=1
 
         output+="\nDrugs Administered:\n"
-        output+= str(self.drugsGiven)
+        output+= "\t" +str(self.drugsGiven)
         output+="\nMutations Identified:\n"
-        for key, values in self.mutCharDict:
-            output+= "\tKey: " +key +"\n"
-            output+= "\tValue: "+ values+"\n"
+        for key in self.mutCharDict:
+            output+= "\tKey: " +str(key) +"\n"
+            output+= "\tValue: "+ str(self.mutCharDict[key])+"\n"
 
 
         return output
@@ -244,7 +241,7 @@ class Patient :
 
 def main(argv):
     patient= Patient()
-    patient.inputFile("../hiv_sequences/aligned/968_12525.fasta_linsi.fasta")
+    patient.inputFile("../hiv_sequences/aligned/968_12510.fasta_linsi.fasta")
     print(patient)
 
 
