@@ -16,6 +16,9 @@ class mutationType(Enum):
     syn= 1
     nonsyn= 2
 
+class baseType(Enum):
+    pyr= 1
+    pur=2
 
 
 dnaCodonTable = {
@@ -59,7 +62,7 @@ nucleicAcidCodeTable = {
 	'N': ['A','C','G','T']
 }
 
-baseStructure = {'C': 'pyr', 'T': 'pyr', 'G': 'pur', 'A': 'pur'}
+baseStructure = {'C': baseType.pyr, 'T': baseType.pyr, 'G': baseType.pur, 'A': baseType.pur}
    
 def findMutations(seqt0, seqtf):
     mutType = ""
@@ -81,17 +84,69 @@ def findMutations(seqt0, seqtf):
             if "-" in t0codon or "-" in tfcodon:
                 continue
             if dnaCodonTable[t0codon] != dnaCodonTable[tfcodon]:
-                mutType = "nonsyn"
+                mutType = mutationType.syn
             else:
-                mutType = "syn"
+                mutType = mutationtype.nonSyn
             for i in range(3):
                 if t0codon[i] != tfcodon[i]:
                     if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transversion", mutType]})
+                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType]})
                     else:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transition", mutType]})
+                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType]})
 
     return mutCharDict
+
+
+def findAllPossibleMutations(seqInit):
+    base= ['A', 'T', 'G','C']
+    possibleMutationList= [None] * len(seqInit)
+    mutType = ""
+    # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
+    for pos in range(0, len(seqInit), 3):
+        t0codon = seqInit[pos:pos+3]
+        foundAmbiguousBase= False
+        for pos1 in t0codon:
+            if pos1 in nucleicAcidCodeTable or pos1 == '-':
+                foundAmbiguousBase=True
+                break
+
+
+        if foundAmbiguousBase:
+            continue
+
+
+        for changedPos, currBase in enumerate(t0codon):
+            print("findAllPossibleMutations: position: "+str(changedPos+pos))
+            synTransition= 0
+            nonsynTransition= 0
+            synTransversion= 0
+            nonsynTransversion= 0    
+            codonList = list(t0codon)
+            for testBase in base:
+                if testBase == currBase:
+                    #Base to be tested is same as original base
+                    continue
+                isSyn=False
+                isTrans=False
+                codonList[changedPos]=testBase
+                testCodon= ''.join(codonList)
+                if dnaCodonTable[t0codon] != dnaCodonTable[testCodon]:
+                    isSyn=True
+                if baseStructure[t0codon[changedPos]]==baseStructure[testCodon[changedPos]]:
+                    isTrans=True
+
+                if isSyn and isTrans:
+                    synTransition+=1
+                elif isSyn and not isTrans:
+                    synTransversion+=1
+                elif not isSyn and isTrans:
+                    nonsynTransition+=1
+                elif not isSyn and not isTrans:
+                    nonsynTransversion+=1
+
+            possibleMutationList[pos+changedPos]= (synTransition,nonsynTransition, synTransversion, nonsynTransversion)
+    return possibleMutationList
+
 
 #Finds whether there is a mutation or not at a specific base position
 #in a codon. 
@@ -146,7 +201,9 @@ class Patient :
             self.possibleMutations= possibleMutations
 
 
-        
+
+
+
     def inputFile(self, fname):
         self.fname=fname
         self.uniqueID= ''
@@ -162,6 +219,7 @@ class Patient :
         #Shaves '>' 
 
         self.mutCharDict= findMutations(self.seqt0,self.seqtf)
+        self.possibleMutations= findAllPossibleMutations(self.seqt0)
         #Parse the header and put in relevant information
         finalHeader= mutationList[-1][0]
         #print(finalHeader)
@@ -233,6 +291,14 @@ class Patient :
         for key in self.mutCharDict:
             output+= "\tKey: " +str(key) +"\n"
             output+= "\tValue: "+ str(self.mutCharDict[key])+"\n"
+
+        output+="\nPossible Mutation Counts:\n"
+        for cnt, possibleChanges in enumerate(self.possibleMutations):
+            if(possibleChanges== None):
+                output+= "\t" +str(cnt) +": No counts\n"
+            else:
+                output+="\t"+str(cnt)+": " + str(possibleChanges) + "\n"
+
 
 
         return output
