@@ -112,18 +112,21 @@ class FastAreader :
 
         yield header,sequence
 
-def main(inCL=None):
+def main(argv):
 
-    myReader = FastAreader()
-    seqDict = []
+    for fileName in argv:
 
-    for header,seq in myReader.readFasta():
-        seqDict.append([header, seq])
+        myReader = FastAreader(fileName)
+        seqDict = []
 
-    myMutChar = mutCharStorage(seqDict[0][1], [1][1])
-    totalMutations = myMutChar.findMutations()
-    for key in totalMutations:
-        print("key = " +totalMutations[key])
+
+        for header,seq in myReader.readFasta():
+            seqDict.append([header, seq])
+
+        myMutChar = mutCharStorage(seqDict[0][1], [1][1])
+        totalMutations = myMutChar.findMutations()
+        for key in totalMutations:
+            print("key = " +totalMutations[key])
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
