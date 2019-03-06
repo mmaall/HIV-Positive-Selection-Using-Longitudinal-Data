@@ -85,11 +85,22 @@ class mutCharStorage:
                         else:
                             self.mutCharDict.update({(pos+i+1):["transition", mutType]})
         return self.mutCharDict
+
 class PatientProfile :
-    def __init__ (self, header, seq):
+    def __init__ (self, header, mutDatabase):
         thisHeader = header.split('_')
         self.drug = thisHeader[6]
         self.patientID = ''
+        self.mutations = mutDatabase
+        self.transverseCount = 0
+        self.transitionCount = 0
+        
+        # Saves count for t, v to be used in calculating t,v frequencies
+        for mutInfo in self.mutations.values():
+            if mutInfo[0] == "transversion":
+                self.transverseCount += 1
+            elif mutInfo[0] == "transition":
+                self.transitionCount += 1
 
 
 import sys
@@ -139,6 +150,7 @@ def main(argv):
 
     myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
+    thisPatient = PatientProfile(seqDict[1][1], totalMutations)
     for key in totalMutations:
         print(str(key)+": "+str(totalMutations[key]))
 
