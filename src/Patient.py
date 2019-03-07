@@ -83,10 +83,10 @@ def findMutations(seqt0, seqtf):
         if t0codon != tfcodon:
             if "-" in t0codon or "-" in tfcodon:
                 continue
-            if dnaCodonTable[t0codon] != dnaCodonTable[tfcodon]:
+            if dnaCodonTable[t0codon] == dnaCodonTable[tfcodon]:
                 mutType = mutationType.syn
             else:
-                mutType = mutationtype.nonSyn
+                mutType = mutationType.nonsyn
             for i in range(3):
                 if t0codon[i] != tfcodon[i]:
                     if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
@@ -116,7 +116,7 @@ def findAllPossibleMutations(seqInit):
 
 
         for changedPos, currBase in enumerate(t0codon):
-            print("findAllPossibleMutations: position: "+str(changedPos+pos))
+            #print("findAllPossibleMutations: position: "+str(changedPos+pos))
             synTransition= 0
             nonsynTransition= 0
             synTransversion= 0
@@ -130,7 +130,7 @@ def findAllPossibleMutations(seqInit):
                 isTrans=False
                 codonList[changedPos]=testBase
                 testCodon= ''.join(codonList)
-                if dnaCodonTable[t0codon] != dnaCodonTable[testCodon]:
+                if dnaCodonTable[t0codon] == dnaCodonTable[testCodon]:
                     isSyn=True
                 if baseStructure[t0codon[changedPos]]==baseStructure[testCodon[changedPos]]:
                     isTrans=True
@@ -153,14 +153,27 @@ def findAllPossibleMutations(seqInit):
 #BasePosition: The position of the base in a codon(0,1,2)
 #codonInit: Three letter string of the initial codon
 #codonFinal: Three letter string of the final codon
-def mutationAtBase(basePosition, codonInit, codonFinal):
-    isMuation= False
 
 
 
 
 
+"""
+Patient Class
+Holds patient data from a single fasta patient file.
 
+Instance variables
+fname: File Name
+uniqueID: Unique Identifier provided by the file name
+seqt0: A string that contains the initial sequence from the patient
+seqtf: A string that contains the final sequence from the patient
+mutCharDict: A dictionary that holds all the mutations from t0 to tf
+    Key: Position the position of the mutation (1 to len(seqt0))
+    Value: [t0 base, tf base, transition/transversion, mutType]
+drugsGiven: A list of the drugs administered to this patient
+possibleMutation: A list of len(seqt0) that contains a tuple of the counts of all possible mutations
+    tuple (synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions)
+"""
 class Patient :
     
     def __init__ (self, fname=None,uniqueID= None, seqt0=None , seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
@@ -307,7 +320,7 @@ class Patient :
 
 def main(argv):
     patient= Patient()
-    patient.inputFile("../hiv_sequences/aligned/968_12510.fasta_linsi.fasta")
+    patient.inputFile("../hiv_sequences/aligned/testInput")
     print(patient)
 
 
