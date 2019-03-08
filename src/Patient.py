@@ -59,7 +59,9 @@ nucleicAcidCodeTable = {
 	'B': ['C','G','T'],
 	'D': ['A','G','T'],
 	'V': ['A','C','G'],
+    'H': ['A','C','T'],
 	'N': ['A','C','G','T']
+
 }
 
 baseStructure = {'C': baseType.pyr, 'T': baseType.pyr, 'G': baseType.pur, 'A': baseType.pur}
@@ -213,9 +215,47 @@ class Patient :
         else:
             self.possibleMutations= possibleMutations
 
+        self.transitionCount= 0
+        self.transversionCount= 0
+        self.effectiveLength= 0
 
+    def findMutations(self):
+        self.transitionsCount= 0
+        self.transversionCount= 0
+        self.effectiveLength=0
+        mutType = ""
+        # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
+        self.mutCharDict= {}
+        for pos in range(0, len(self.seqt0), 3):
+            t0codon = self.seqt0[pos:pos+3]
+            tfcodon = self.seqtf[pos:pos+3]
+            foundAmbiguousBase= False
+            for pos1, pos2 in zip(t0codon, tfcodon):
+                if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
+                    foundAmbiguousBase=True
+                    break
+                self.effectiveLength+=1
 
+            if foundAmbiguousBase:
+                continue
 
+            if t0codon != tfcodon:
+                if "-" in t0codon or "-" in tfcodon:
+                    continue
+                if dnaCodonTable[t0codon] == dnaCodonTable[tfcodon]:
+                    mutType = mutationType.syn
+                else:
+                    mutType = mutationType.nonsyn
+                for i in range(3):
+                    if t0codon[i] != tfcodon[i]:
+                        if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType]})
+                            self.transversionCount+=1
+                        else:
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType]})
+                            self.transitionCount+=1
+
+        
 
     def inputFile(self, fname):
         self.fname=fname
@@ -231,7 +271,7 @@ class Patient :
         self.seqtf= mutationList[-1][1]
         #Shaves '>' 
 
-        self.mutCharDict= findMutations(self.seqt0,self.seqtf)
+        self.findMutations()
         self.possibleMutations= findAllPossibleMutations(self.seqt0)
         #Parse the header and put in relevant information
         finalHeader= mutationList[-1][0]
@@ -305,13 +345,22 @@ class Patient :
             output+= "\tKey: " +str(key) +"\n"
             output+= "\tValue: "+ str(self.mutCharDict[key])+"\n"
 
+        output+="Mutation Count: \n"
+        output+="\tTransversions:\t" +str(self.transversionCount)+"\n"
+        output+="\tTransitions:\t" +str(self.transitionCount) +"\n"
+
+        output+="Effective Length:\n"
+        output+= "\t"+str(self.effectiveLength) +"\n"
+
+        #This isn't really helpful stuff, so we'll just not worry about it for now
+        '''
         output+="\nPossible Mutation Counts:\n"
         for cnt, possibleChanges in enumerate(self.possibleMutations):
             if(possibleChanges== None):
                 output+= "\t" +str(cnt) +": No counts\n"
             else:
                 output+="\t"+str(cnt)+": " + str(possibleChanges) + "\n"
-
+        '''
 
 
         return output

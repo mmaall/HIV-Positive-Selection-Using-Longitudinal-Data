@@ -5,6 +5,26 @@
 from Patient import Patient
 import sys
 import argparse
+import random
+
+
+class KaKsCalculation: 
+	def __init__ (self, patientList=None):
+
+		self.kaksRatios= []
+		self.freqTransition= 0
+		self.freqTransversion= 0
+		if patientList== None:
+			self.patientList= []
+		else:
+			self.patientList= patientList
+
+
+
+	def calculateRatio(self):
+		for currPatient in PatientList:
+			for mutations in currPatient.mutCharDict:
+				print(mutations)
 
 
 
@@ -37,14 +57,18 @@ def main(argv):
     patientList= []
 
     for fileName in args.files:
-    	print("Inputing patient "+fileName)
     	newPatient= Patient()
     	newPatient.inputFile(fileName)
     	patientList.append(newPatient)
 
     print(str(len(patientList)))
-    for patient in patientList:
-    	print (patient)
+    
+    random.seed= 1
+    currPatientList= []
+    for i in range(10):
+    	currPatientList.append(patientList[random.randint(0,len(patientList))])
+
+    kaks= KaKsCalculation(currPatientList)
 
 
 
