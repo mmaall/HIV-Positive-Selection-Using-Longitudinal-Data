@@ -101,7 +101,7 @@ def findMutations(seqt0, seqtf):
 
 def findAllPossibleMutations(seqInit):
     base= ['A', 'T', 'G','C']
-    possibleMutationList= [None] * len(seqInit)
+    possibleMutationList= [None] * (len(seqInit)+1)
     mutType = ""
     # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
     for pos in range(0, len(seqInit), 3):
@@ -146,7 +146,7 @@ def findAllPossibleMutations(seqInit):
                 elif not isSyn and not isTrans:
                     nonsynTransversion+=1
 
-            possibleMutationList[pos+changedPos]= (synTransition,nonsynTransition, synTransversion, nonsynTransversion)
+            possibleMutationList[pos+changedPos+1]= (synTransition,nonsynTransition, synTransversion, nonsynTransversion)
     return possibleMutationList
 
 
@@ -178,7 +178,8 @@ possibleMutation: A list of len(seqt0) that contains a tuple of the counts of al
 """
 class Patient :
     
-    def __init__ (self, fname=None,uniqueID= None, seqt0=None , seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
+    def __init__ (self, fname=None,uniqueID= None, seqt0=None,
+                     seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
         '''contructor: saves attribute fname '''
         if fname == None:
             self.fname= ''
@@ -230,11 +231,13 @@ class Patient :
             t0codon = self.seqt0[pos:pos+3]
             tfcodon = self.seqtf[pos:pos+3]
             foundAmbiguousBase= False
+            currLength= 0
             for pos1, pos2 in zip(t0codon, tfcodon):
                 if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
                     foundAmbiguousBase=True
                     break
-                self.effectiveLength+=1
+                currLength+=1
+            self.effectiveLength+=currLength
 
             if foundAmbiguousBase:
                 continue
