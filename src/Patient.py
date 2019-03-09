@@ -101,7 +101,7 @@ def findMutations(seqt0, seqtf):
 
 def findAllPossibleMutations(seqInit):
     base= ['A', 'T', 'G','C']
-    possibleMutationList= [None] * (len(seqInit)+1)
+    possibleMutationList= [None] * (len(seqInit)+1) 
     mutType = ""
     # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
     for pos in range(0, len(seqInit), 3):

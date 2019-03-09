@@ -78,6 +78,9 @@ class KaKsCalculation:
 			ratio=0
 			if  numSyn == 0:
 				numSyn=1
+				#ratio = 0
+				#self.kaksRatios.append(ratio)
+				#continue
 			numerator= numNonSyn/ numSyn
 			topDenominator= (transFreq* mutList[1]) + (transvFreq* mutList[3])
 			botDenominator=	(transFreq* mutList[0]) + (transvFreq* mutList[2])
@@ -129,22 +132,42 @@ def main(argv):
     	newPatient.inputFile(fileName)
     	patientList.append(newPatient)
 
-    print(str(len(patientList)))
+    #print(str(len(patientList)))
     
+    print("Patients Inputed")
     random.seed= 1
-    currPatientList= []
-    for i in range(10):
-    	currPatientList.append(patientList[random.randint(0,len(patientList))])
 
-    kaks= KaKsCalculation(patientList)
-    kaks.calculateRatio()
+
+    #Holds the averages for the Kaks ratios
+    kaksAvg= [0] * (1680+1)
+    #pvalues
+    pValues= [0] * (1680+1)
+    #Holds the averages for the 
+    numReplicates= 2000 # Number of bootstrap replicates
+    numPatients= len(patientList)
+    selectionPct= .2
+    patientsPerBootstrap= int(selectionPct*numPatients)
+
+    for i in range(numReplicates):
+    	print("Replicate: " + str(i))
+    	sampleList= random.sample(range(0, numPatients), patientsPerBootstrap)
+    	selectedPatientList =[]
+    	for patientIndex in sampleList:
+    		selectedPatientList.append(patientList[patientIndex])
+    	currKaKs= KaKsCalculation(selectedPatientList) 
+    	currKaKs.calculateRatio()
+    	for position in range(0,len(currKaKs.kaksRatios)):
+    		kaksAvg[position]+= currKaKs.kaksRatios[position]
+    for i in range(len(kaksAvg)):
+    	kaksAvg[i]= kaksAvg[i]/numReplicates
 
     count= 0
-    for ratio in kaks.kaksRatios:
+    for ratio in kaksAvg:
     	if(ratio>= 1.0):
-    		print("Position: "+str(count)+"\tKaKs Ratio: "+str(ratio))
+    		codon= int((count-1)/3)+1
+    		print("Position: "+str(count)+"\tKaKs Ratio: "+str(ratio)+"\tCodon: " +str(codon))
     	count +=1
-
+  
 
 
 
