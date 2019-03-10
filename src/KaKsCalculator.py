@@ -13,7 +13,8 @@ import random
 
 class KaKsCalculation: 
 	def __init__ (self, patientList=None):
-		self.kaksRatios= []
+		self.kaksRatioByBase= []
+		self.kaksRatioByCodon= []
 		self.freqTransition= 0
 		self.freqTransversion= 0
 		self.standardSeqLength= 1680
@@ -77,24 +78,16 @@ class KaKsCalculation:
 		for numSyn, numNonSyn, mutList in zip(synCount[1:], nonSynCount[1:], possMutations[1:]):
 			ratio=0
 			if  numSyn == 0:
-				numSyn=1
-				#ratio = 0
-				#self.kaksRatios.append(ratio)
-				#continue
+				#numSyn=1
+				ratio = 0
+				self.kaksRatioByBase.append(ratio)
+				continue
 			numerator= numNonSyn/ numSyn
 			topDenominator= (transFreq* mutList[1]) + (transvFreq* mutList[3])
 			botDenominator=	(transFreq* mutList[0]) + (transvFreq* mutList[2])
 			ratio= numerator / (topDenominator/botDenominator)
-			self.kaksRatios.append(ratio)
-			#self.kaksRatios.append(self.kaksHelper(numSyn, numNonSyn,transFreq,transvFreq ))
-
-			
-
-
-
-
-
-
+			self.kaksRatioByBase.append(ratio)
+			#self.kaksRatioByBase.append(self.kaksHelper(numSyn, numNonSyn,transFreq,transvFreq ))
 
 
 
@@ -143,7 +136,7 @@ def main(argv):
     #pvalues
     pValues= [0] * (1680+1)
     #Holds the averages for the 
-    numReplicates= 2000 # Number of bootstrap replicates
+    numReplicates= 10000 # Number of bootstrap replicates
     numPatients= len(patientList)
     selectionPct= .2
     patientsPerBootstrap= int(selectionPct*numPatients)
@@ -156,8 +149,8 @@ def main(argv):
     		selectedPatientList.append(patientList[patientIndex])
     	currKaKs= KaKsCalculation(selectedPatientList) 
     	currKaKs.calculateRatio()
-    	for position in range(0,len(currKaKs.kaksRatios)):
-    		kaksAvg[position]+= currKaKs.kaksRatios[position]
+    	for position in range(0,len(currKaKs.kaksRatioByBase)):
+    		kaksAvg[position]+= currKaKs.kaksRatioByBase[position]
     for i in range(len(kaksAvg)):
     	kaksAvg[i]= kaksAvg[i]/numReplicates
 

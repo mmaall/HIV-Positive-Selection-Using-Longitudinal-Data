@@ -66,37 +66,6 @@ nucleicAcidCodeTable = {
 
 baseStructure = {'C': baseType.pyr, 'T': baseType.pyr, 'G': baseType.pur, 'A': baseType.pur}
    
-def findMutations(seqt0, seqtf):
-    mutType = ""
-    # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
-    mutCharDict= {}
-    for pos in range(0, len(seqt0), 3):
-        t0codon = seqt0[pos:pos+3]
-        tfcodon = seqtf[pos:pos+3]
-        foundAmbiguousBase= False
-        for pos1, pos2 in zip(t0codon, tfcodon):
-            if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
-                foundAmbiguousBase=True
-                break
-
-        if foundAmbiguousBase:
-            continue
-
-        if t0codon != tfcodon:
-            if "-" in t0codon or "-" in tfcodon:
-                continue
-            if dnaCodonTable[t0codon] == dnaCodonTable[tfcodon]:
-                mutType = mutationType.syn
-            else:
-                mutType = mutationType.nonsyn
-            for i in range(3):
-                if t0codon[i] != tfcodon[i]:
-                    if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType]})
-                    else:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType]})
-
-    return mutCharDict
 
 
 def findAllPossibleMutations(seqInit):
@@ -225,9 +194,11 @@ class Patient :
         self.transversionCount= 0
         self.effectiveLength=0
         mutType = ""
-        # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
+        # Key = Position, value = [t0 base, tf base, transition/transversion, mutType, codon]
         self.mutCharDict= {}
+        codon= 0
         for pos in range(0, len(self.seqt0), 3):
+            codon+=1
             t0codon = self.seqt0[pos:pos+3]
             tfcodon = self.seqtf[pos:pos+3]
             foundAmbiguousBase= False
@@ -252,10 +223,10 @@ class Patient :
                 for i in range(3):
                     if t0codon[i] != tfcodon[i]:
                         if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
-                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType]})
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType, codon]})
                             self.transversionCount+=1
                         else:
-                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType]})
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType, codon]})
                             self.transitionCount+=1
 
         
