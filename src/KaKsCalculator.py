@@ -50,21 +50,12 @@ class KaKsCalculation:
         #Every element is a list of four elements 
         #[synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions]    
         possMutations= [[0,0,0,0]]* seqLength
-        transCount= 0
-        transvCount= 0
 
         for currPatient in self.patientList:
             totalNucleotides+= currPatient.effectiveLength
             for key in currPatient.mutCharDict:
                 # Key = Position, value = [t0 base, tf base, transition/transversion, mutType, codon]
                 mutationInfo = currPatient.mutCharDict[key]
-                if mutationInfo[2] == transTranv.transition:
-                    #transCounts[key]+=1
-                    transCount+=1
-                else: 
-                    #transvCounts[key]+=1
-                    transvCount+=1
-
                 if mutationInfo[3] == mutationType.syn:
                     synCount[key]+=1
                 else:
@@ -90,8 +81,7 @@ class KaKsCalculation:
         #transvFreq= transvCount/(totalNucleotides*numPatients*2)
         
         #I think this is better, transition freq is number of transitions/total number of nucleotides
-        self.freqTransition= transCount/(totalNucleotides)
-        self.freqTransversion= transvCount/(totalNucleotides*2)
+
         #Calculate KaKs Ratio by base
         for numSyn, numNonSyn, mutList in zip(synCount[1:], nonSynCount[1:], possMutations[1:]):
             ratio=0
@@ -213,7 +203,7 @@ def main(argv):
     pValuesBase= [0.0] * (1680+1)
     pValuesCodon= [0.0] * int((1680/3)+1)
     #Holds the averages for the 
-    numReplicates= 10000 # Number of bootstrap replicates
+    numReplicates= 10000	 # Number of bootstrap replicates
     numPatients= len(patientList)
     selectionPct= .2
     patientsPerBootstrap= int(selectionPct*numPatients)
