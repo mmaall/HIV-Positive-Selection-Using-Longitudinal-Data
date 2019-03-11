@@ -83,6 +83,8 @@ class KaKsCalculation:
         #I think this is better, transition freq is number of transitions/total number of nucleotides
 
         #Calculate KaKs Ratio by base
+        #Creates first index that means nothing
+        self.kaksRatioByBase.append(0)
         for numSyn, numNonSyn, mutList in zip(synCount[1:], nonSynCount[1:], possMutations[1:]):
             ratio=0
             if  numSyn == 0:
@@ -97,8 +99,11 @@ class KaKsCalculation:
             botDenominator=    (self.freqTransition* mutList[0]) + (self.freqTransversion* mutList[2])
             ratio= numerator / (topDenominator/botDenominator)
             self.kaksRatioByBase.append(ratio)
+            #IS THIS OFF BY ONE?!
             #self.kaksRatioByBase.append(self.kaksHelper(numSyn, numNonSyn,self.freqTransition,self.freqTransversion ))
         #Calculate kaks by Codon
+        #Create the first index that means nothing
+        self.kaksRatioByCodon.append(0)
         for pos in range(1, len(synCount), 3):
             numSyn=0
             numNonSyn=0
@@ -127,7 +132,7 @@ class KaKsCalculation:
             botDenominator=    (self.freqTransition* possibleMutationsCodon[0]) + (self.freqTransversion* possibleMutationsCodon[2])
             ratio= numerator / (topDenominator/botDenominator)
             self.kaksRatioByCodon.append(ratio)
-
+          	#WOAH IS THIS OFF BY ONE?!
 
 
 
