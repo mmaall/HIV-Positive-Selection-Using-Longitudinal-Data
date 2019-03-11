@@ -206,8 +206,10 @@ class Patient :
             for pos1, pos2 in zip(t0codon, tfcodon):
                 if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
                     foundAmbiguousBase=True
+                    currLength= 0
                     break
-                currLength+=1
+                if pos1 != '-' and pos2!=  '-':
+                    currLength+=1   
             self.effectiveLength+=currLength
 
             if foundAmbiguousBase:
@@ -327,14 +329,14 @@ class Patient :
         output+= "\t"+str(self.effectiveLength) +"\n"
 
         #This isn't really helpful stuff, so we'll just not worry about it for now
-        '''
+        
         output+="\nPossible Mutation Counts:\n"
         for cnt, possibleChanges in enumerate(self.possibleMutations):
             if(possibleChanges== None):
                 output+= "\t" +str(cnt) +": No counts\n"
             else:
                 output+="\t"+str(cnt)+": " + str(possibleChanges) + "\n"
-        '''
+        
 
 
         return output

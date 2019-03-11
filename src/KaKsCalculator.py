@@ -30,6 +30,7 @@ class KaKsCalculation:
 		return numerator / (topDenominator/botDenominator)
 	def calculateRatio(self):
 		#We're not going to use the 1s place for these
+		#Total number of nucleotides looked at 
 		totalNucleotides=0
 		numPatients= len(self.patientList)
 		seqLength= self.standardSeqLength +1
@@ -45,9 +46,9 @@ class KaKsCalculation:
 		transvCount= 0
 
 		for currPatient in self.patientList:
-			totalNucleotides= currPatient.effectiveLength
+			totalNucleotides+= currPatient.effectiveLength
 			for key in currPatient.mutCharDict:
-				# Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
+				# Key = Position, value = [t0 base, tf base, transition/transversion, mutType, codon]
 				mutationInfo = currPatient.mutCharDict[key]
 				if mutationInfo[2] == transTranv.transition:
 					#transCounts[key]+=1
@@ -77,16 +78,20 @@ class KaKsCalculation:
 
 
 		#Calculate Transition/transversion frequency
-		transFreq= transCount/(totalNucleotides*numPatients)
-		transvFreq= transvCount/(totalNucleotides*numPatients*2)
+		#transFreq= transCount/(totalNucleotides*numPatients)
+		#transvFreq= transvCount/(totalNucleotides*numPatients*2)
+		
+		#I think this is better, transition freq is number of transitions/total number of nucleotides
+		transFreq= transCount/(totalNucleotides)
+		transvFreq= transvCount/(totalNucleotides*2)
 		#Calculate KaKs Ratio by base
 		for numSyn, numNonSyn, mutList in zip(synCount[1:], nonSynCount[1:], possMutations[1:]):
 			ratio=0
 			if  numSyn == 0:
-				#numSyn=1
-				ratio = 0
-				self.kaksRatioByBase.append(ratio)
-				continue
+				numSyn=1
+				#ratio = 0
+				#self.kaksRatioByBase.append(ratio)
+				#continue
 			numerator= numNonSyn/ numSyn
 
 			#[synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions]	
@@ -96,10 +101,10 @@ class KaKsCalculation:
 			self.kaksRatioByBase.append(ratio)
 			#self.kaksRatioByBase.append(self.kaksHelper(numSyn, numNonSyn,transFreq,transvFreq ))
 		#Calculate kaks by Codon
-		kaksRatioByCodon = [0] * (int(self.standardSeqLength/3)+1)
 		for pos in range(1, len(synCount), 3):
 			numSyn=0
 			numNonSyn=0
+			#Counts the number of possible mutations that could occur in this codon
 			#[synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions]	
 			possibleMutationsCodon= [0,0,0,0]
 
@@ -119,8 +124,8 @@ class KaKsCalculation:
 				#continue
 			numerator= float(numNonSyn)/ float(numSyn)
 			#[synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions]	
-			topDenominator= (transFreq* mutList[1]) + (transvFreq* mutList[3])
-			botDenominator=	(transFreq* mutList[0]) + (transvFreq* mutList[2])
+			topDenominator= (transFreq* possibleMutationsCodon[1]) + (transvFreq* possibleMutationsCodon[3])
+			botDenominator=	(transFreq* possibleMutationsCodon[0]) + (transvFreq* possibleMutationsCodon[2])
 			ratio= numerator / (topDenominator/botDenominator)
 			self.kaksRatioByCodon.append(ratio)
 
@@ -178,13 +183,14 @@ def main(argv):
     #Holds the number of nonzero kaks ratios at a position
     numNonZeroKaKsValues= [0] * (1680+1)
     #pvalues
-    pValuesBase= [0] * (1680+1)
-    pValuesCodon= [0] * int((1680/3)+1)
+    pValuesBase= [0.0] * (1680+1)
+    pValuesCodon= [0.0] * int((1680/3)+1)
     #Holds the averages for the 
-    numReplicates= 1000 # Number of bootstrap replicates
+    numReplicates= 10000 # Number of bootstrap replicates
     numPatients= len(patientList)
     selectionPct= .2
     patientsPerBootstrap= int(selectionPct*numPatients)
+    pValueThresh = .05
 
     #Run KaKs calculations for the number of replicates defined
 
@@ -203,26 +209,35 @@ def main(argv):
     	#Add them to the running list of average KaKs values
     	for position in range(0,len(currKaKs.kaksRatioByBase)):
     		kaksAvg[position]+= currKaKs.kaksRatioByBase[position]
+    		if currKaKs.kaksRatioByBase[position] > 1:
+    			#Violates null hypothesis
+    			pValuesBase[position]+=1
+
     	for position in range(0, len(currKaKs.kaksRatioByCodon)):
     		kaksAvgCodon[position] += currKaKs.kaksRatioByCodon[position]
+    		if currKaKs.kaksRatioByCodon[position] > 1:
+    			#Violates null hypothesis
+    			pValuesCodon[position]+=1
 
     #Average the KaKs ratios over the number of replicates
     for i in range(len(kaksAvg)):
     	kaksAvg[i]= kaksAvg[i]/numReplicates
+    	pValuesBase[i]= 1- (pValuesBase[i]/numReplicates)
     for i in range(len(kaksAvgCodon)):
     	kaksAvgCodon[i]= kaksAvgCodon[i]/numReplicates
+    	pValuesCodon[i]=1 - (pValuesCodon[i]/numReplicates)
 
     count= 0
-    for ratio in kaksAvg:
-    	if(ratio>= 1.0):
+    for ratio, pVal in zip(kaksAvg, pValuesBase):
+    	if(ratio>= 1.0 or pVal <= pValueThresh ):
     		codon= int((count-1)/3)+1
-    		print("Position: "+str(count)+"\tKaKs Ratio: "+str(ratio)+"\tCodon: " +str(codon))
+    		print("Position: "+str(count)+"\tCodon: " +str(codon)+ "\tKaKs Ratio: "+str(ratio)+"\tP-Value: "+str(pVal))
     	count +=1
     count= 0
     print("\nCodon Calculations\n")
-    for ratio in kaksAvgCodon:
-    	if ratio>= 1.0:
-    		print("Codon: " +str(count)+"\tKaKs Ratio: "+str(ratio))
+    for ratio, pVal in zip(kaksAvgCodon, pValuesCodon):
+    	if ratio>= 1.0 or pVal <= pValueThresh:
+    		print("Codon: " +str(count)+"\tKaKs Ratio: "+str(ratio)+"\tP-Value: " + str(pVal))
     	count +=1
 
 
