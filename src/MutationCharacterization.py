@@ -62,45 +62,70 @@ class mutCharStorage:
         self.seqt0 = t0Seq
         self.seqtf = tfSeq
 
-        # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
+        # Key = Position, value = [codon, Yt, Yv, St, Sv]
         self.mutCharDict = {}
 
     def findMutations(self):
         mutType = ""
+        codon = 0 # to start off
         for pos in range(0, len(self.seqt0), 3):
             t0codon = self.seqt0[pos:pos+3]
             tfcodon = self.seqtf[pos:pos+3]
+            codon += 1 # we want to know which codon it occurs in
             if t0codon != tfcodon:
                 if t0codon in self.dnaCodonTable.keys() and tfcodon in self.dnaCodonTable.keys():
-                    if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]:
-                        mutType = "nonsyn"
-                    else:
-                        mutType = "syn"
-                else:
-                    continue
-                for i in range(3):
-                    if t0codon[i] != tfcodon[i]:
-                        if self.baseStructure[t0codon[i]] != self.baseStructure[tfcodon[i]]:
-                            self.mutCharDict.update({(pos+i+1):["transversion", mutType]})
-                        else:
-                            self.mutCharDict.update({(pos+i+1):["transition", mutType]})
+                    if self.dnaCodonTable[t0codon] != self.dnaCodonTable[tfcodon]: #nonsyn
+
+                        for i in range(3):
+                            if t0codon[i] != tfcodon[i]: 
+                                if self.baseStructure[t0codon[i]] != self.baseStructure[tfcodon[i]]:
+                                    # nonsyn and transversion
+                                    self.mutCharDict.update({(pos+i+1):[codon, 0, 1, 0, 0]})
+                                else:
+                                    # nonsyn and transition
+                                    self.mutCharDict.update({(pos+i+1):[codon, 1, 0, 0, 0]})
+
+                    else: # synonymous
+                        for i in range(3):
+                            if t0codon[i] != tfcodon[i]: 
+                                if self.baseStructure[t0codon[i]] != self.baseStructure[tfcodon[i]]:
+                                    # syn and transversion
+                                    self.mutCharDict.update({(pos+i+1):[codon, 0, 0, 0, 1]})
+                                else:
+                                    # syn and transition
+                                    self.mutCharDict.update({(pos+i+1):[codon, 0, 0, 1, 0]})
+
         return self.mutCharDict
 
 class PatientProfile :
     def __init__ (self, header, mutDatabase):
         thisHeader = header.split('_')
-        #self.drug = thisHeader[6]
+        self.drugs = []
+        # records all drugs taken by patient
+        for i in range(6, len(thisHeader)-1):
+            if len(thisHeader[i]) > 1: 
+                self.drugs.append(thisHeader[i])
+
+        
         self.patientID = thisHeader
         self.mutations = mutDatabase
         self.transverseCount = 0
         self.transitionCount = 0
+        self.synCount = 0
+        self.nonsynCount = 0
         
         # Saves count for t, v to be used in calculating t,v frequencies
         for mutInfo in self.mutations.values():
-            if mutInfo[0] == "transversion":
+            if mutInfo[2] == 1 or mutInfo[4]:
                 self.transverseCount += 1
-            elif mutInfo[0] == "transition":
+            elif mutInfo[1] == 1 or mutInfo[3] == 1:
                 self.transitionCount += 1
+
+        for mutInfo in self.mutations.values():
+            if mutInfo[1] == 1 or mutInfo[2] == 1:
+                self.nonsynCount += 1
+            elif mutInfo[3] == 0 or mutInfo[4] == 1:
+                self.synCount += 1
 
 
 import sys
@@ -142,19 +167,24 @@ class FastaReader :
 
         yield header,sequence
 
-def main():
 
+def main():
 
     myReader = FastaReader()
     seqDict = []
+    patientInfo = {}
     for header, sequence in myReader.readFasta():
         seqDict.append([header, sequence])
 
     myMutChar = mutCharStorage(seqDict[0][1], seqDict[1][1])
     totalMutations = myMutChar.findMutations()
-    thisPatient = PatientProfile(seqDict[1][1], totalMutations)
+    thisPatient = PatientProfile(seqDict[1][0], totalMutations)
+    print(thisPatient.patientID)
+    print("drugs taken: "+str(thisPatient.drugs))
     print("v: "+str(thisPatient.transverseCount))
     print("t: "+str(thisPatient.transitionCount))
+    print("nonsyn: "+str(thisPatient.nonsynCount))
+    print("syn: "+str(thisPatient.synCount))
     for key in totalMutations:
         print(str(key)+": "+str(totalMutations[key]))
 
