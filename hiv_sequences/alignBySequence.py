@@ -152,7 +152,6 @@ def main(argv):
     args = p.parse_args()
 
 
-    if args.fastaDir is None:
         p.print_help()
 
     if args.alignmentFile is None:

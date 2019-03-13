@@ -16,6 +16,9 @@ class mutationType(Enum):
     syn= 1
     nonsyn= 2
 
+class baseType(Enum):
+    pyr= 1
+    pur=2
 
 
 dnaCodonTable = {
@@ -56,59 +59,96 @@ nucleicAcidCodeTable = {
 	'B': ['C','G','T'],
 	'D': ['A','G','T'],
 	'V': ['A','C','G'],
+    'H': ['A','C','T'],
 	'N': ['A','C','G','T']
+
 }
 
-baseStructure = {'C': 'pyr', 'T': 'pyr', 'G': 'pur', 'A': 'pur'}
+baseStructure = {'C': baseType.pyr, 'T': baseType.pyr, 'G': baseType.pur, 'A': baseType.pur}
    
-def findMutations(seqt0, seqtf):
+
+
+def findAllPossibleMutations(seqInit):
+    base= ['A', 'T', 'G','C']
+    possibleMutationList= [None] * (len(seqInit)+1) 
     mutType = ""
     # Key = Position, value = [t0 base, tf base, transition/transversion, mutType]
-    mutCharDict= {}
-    for pos in range(0, len(seqt0), 3):
-        t0codon = seqt0[pos:pos+3]
-        tfcodon = seqtf[pos:pos+3]
+    for pos in range(0, len(seqInit), 3):
+        t0codon = seqInit[pos:pos+3]
         foundAmbiguousBase= False
-        for pos1, pos2 in zip(t0codon, tfcodon):
-            if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
+        for pos1 in t0codon:
+            if pos1 in nucleicAcidCodeTable or pos1 == '-':
                 foundAmbiguousBase=True
                 break
+
 
         if foundAmbiguousBase:
             continue
 
-        if t0codon != tfcodon:
-            if "-" in t0codon or "-" in tfcodon:
-                continue
-            if dnaCodonTable[t0codon] != dnaCodonTable[tfcodon]:
-                mutType = "nonsyn"
-            else:
-                mutType = "syn"
-            for i in range(3):
-                if t0codon[i] != tfcodon[i]:
-                    if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transversion", mutType]})
-                    else:
-                        mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], "transition", mutType]})
 
-    return mutCharDict
+        for changedPos, currBase in enumerate(t0codon):
+            #print("findAllPossibleMutations: position: "+str(changedPos+pos))
+            synTransition= 0
+            nonsynTransition= 0
+            synTransversion= 0
+            nonsynTransversion= 0    
+            codonList = list(t0codon)
+            for testBase in base:
+                if testBase == currBase:
+                    #Base to be tested is same as original base
+                    continue
+                isSyn=False
+                isTrans=False
+                codonList[changedPos]=testBase
+                testCodon= ''.join(codonList)
+                if dnaCodonTable[t0codon] == dnaCodonTable[testCodon]:
+                    isSyn=True
+                if baseStructure[t0codon[changedPos]]==baseStructure[testCodon[changedPos]]:
+                    isTrans=True
+
+                if isSyn and isTrans:
+                    synTransition+=1
+                elif isSyn and not isTrans:
+                    synTransversion+=1
+                elif not isSyn and isTrans:
+                    nonsynTransition+=1
+                elif not isSyn and not isTrans:
+                    nonsynTransversion+=1
+
+            possibleMutationList[pos+changedPos+1]= (synTransition,nonsynTransition, synTransversion, nonsynTransversion)
+    return possibleMutationList
+
 
 #Finds whether there is a mutation or not at a specific base position
 #in a codon. 
 #BasePosition: The position of the base in a codon(0,1,2)
 #codonInit: Three letter string of the initial codon
 #codonFinal: Three letter string of the final codon
-def mutationAtBase(basePosition, codonInit, codonFinal):
-    isMuation= False
 
 
 
 
 
+"""
+Patient Class
+Holds patient data from a single fasta patient file.
 
+Instance variables
+fname: File Name
+uniqueID: Unique Identifier provided by the file name
+seqt0: A string that contains the initial sequence from the patient
+seqtf: A string that contains the final sequence from the patient
+mutCharDict: A dictionary that holds all the mutations from t0 to tf
+    Key: Position the position of the mutation (1 to len(seqt0))
+    Value: [t0 base, tf base, transition/transversion, mutType]
+drugsGiven: A list of the drugs administered to this patient
+possibleMutation: A list of len(seqt0) that contains a tuple of the counts of all possible mutations
+    tuple (synonymous transitions, nonsynonymous transitions, synonymous transversions, nonsynonymous transversions)
+"""
 class Patient :
     
-    def __init__ (self, fname=None,uniqueID= None, seqt0=None , seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
+    def __init__ (self, fname=None,uniqueID= None, seqt0=None,
+                     seqtf= None, mutCharDict= None, drugsGiven= None, possibleMutations=None):
         '''contructor: saves attribute fname '''
         if fname == None:
             self.fname= ''
@@ -145,8 +185,54 @@ class Patient :
         else:
             self.possibleMutations= possibleMutations
 
+        self.transitionCount= 0
+        self.transversionCount= 0
+        self.effectiveLength= 0
+
+    def findMutations(self):
+        self.transitionsCount= 0
+        self.transversionCount= 0
+        self.effectiveLength=0
+        mutType = ""
+        # Key = Position, value = [t0 base, tf base, transition/transversion, mutType, codon]
+        self.mutCharDict= {}
+        codon= 0
+        for pos in range(0, len(self.seqt0), 3):
+            codon+=1
+            t0codon = self.seqt0[pos:pos+3]
+            tfcodon = self.seqtf[pos:pos+3]
+            foundAmbiguousBase= False
+            currLength= 0
+            for pos1, pos2 in zip(t0codon, tfcodon):
+                if pos1 in nucleicAcidCodeTable or pos2 in nucleicAcidCodeTable:
+                    foundAmbiguousBase=True
+                    currLength= 0
+                    break
+                if pos1 != '-' and pos2!=  '-':
+                    currLength+=1   
+            self.effectiveLength+=currLength
+
+            if foundAmbiguousBase:
+                continue
+
+            if t0codon != tfcodon:
+                if "-" in t0codon or "-" in tfcodon:
+                    continue
+                if dnaCodonTable[t0codon] == dnaCodonTable[tfcodon]:
+                    mutType = mutationType.syn
+                else:
+                    mutType = mutationType.nonsyn
+                for i in range(3):
+                    if t0codon[i] != tfcodon[i]:
+                        if baseStructure[t0codon[i]] != baseStructure[tfcodon[i]]:
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transversion, mutType, codon]})
+                            self.transversionCount+=1
+                        else:
+                            self.mutCharDict.update({(pos+i+1):[t0codon[i], tfcodon[i], transTranv.transition, mutType, codon]})
+                            self.transitionCount+=1
 
         
+
     def inputFile(self, fname):
         self.fname=fname
         self.uniqueID= ''
@@ -161,7 +247,8 @@ class Patient :
         self.seqtf= mutationList[-1][1]
         #Shaves '>' 
 
-        self.mutCharDict= findMutations(self.seqt0,self.seqtf)
+        self.findMutations()
+        self.possibleMutations= findAllPossibleMutations(self.seqt0)
         #Parse the header and put in relevant information
         finalHeader= mutationList[-1][0]
         #print(finalHeader)
@@ -234,6 +321,23 @@ class Patient :
             output+= "\tKey: " +str(key) +"\n"
             output+= "\tValue: "+ str(self.mutCharDict[key])+"\n"
 
+        output+="Mutation Count: \n"
+        output+="\tTransversions:\t" +str(self.transversionCount)+"\n"
+        output+="\tTransitions:\t" +str(self.transitionCount) +"\n"
+
+        output+="Effective Length:\n"
+        output+= "\t"+str(self.effectiveLength) +"\n"
+
+        #This isn't really helpful stuff, so we'll just not worry about it for now
+        
+        output+="\nPossible Mutation Counts:\n"
+        for cnt, possibleChanges in enumerate(self.possibleMutations):
+            if(possibleChanges== None):
+                output+= "\t" +str(cnt) +": No counts\n"
+            else:
+                output+="\t"+str(cnt)+": " + str(possibleChanges) + "\n"
+        
+
 
         return output
 
@@ -241,7 +345,7 @@ class Patient :
 
 def main(argv):
     patient= Patient()
-    patient.inputFile("../hiv_sequences/aligned/968_12510.fasta_linsi.fasta")
+    patient.inputFile("../hiv_sequences/aligned/testInput")
     print(patient)
 
 
