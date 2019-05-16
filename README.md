@@ -9,5 +9,5 @@ For a more indepth description of the project, view the Project_Report.pdf file.
 
 The program runs in Python 3. Backwards compatability is not guaranteed. 
 
-Please don't make any important scientific decisions based on this program and our report. We are just undergraduates and errors may exist in our conclusions. 
+Please don't make any important scientific decisions based on this program and our report. We are just undergraduates and errors may exist in everything we do.  
 
